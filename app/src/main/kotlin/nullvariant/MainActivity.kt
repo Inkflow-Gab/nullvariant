@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity() {
         if (::bypassHint.isInitialized) {
             bypassHint.text = when (injectionMethod) {
                 "2" -> "Rootless mode. Stable injection, lower stealth."
-                "3" -> "Root + hidden maps and solist. Strongest stealth."
+                "3" -> "Hidden maps + solist. Root unlocks the full mask."
                 else -> "Root mode with standard stealth flags."
             }
         }

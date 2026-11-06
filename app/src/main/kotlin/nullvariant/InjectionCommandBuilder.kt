@@ -13,7 +13,10 @@ object InjectionCommandBuilder {
     ): String {
         val rootArgument = when {
             injectionMethod == "2" -> ""
-            injectionMethod == "3" -> ObfuscatedTextDecoder.decode(FORCED_ROOT_TOKEN)
+            injectionMethod == "3" -> {
+                val forced = ObfuscatedTextDecoder.decode(FORCED_ROOT_TOKEN)
+                if (hasRootAccess) forced else forced.replace("-root", "").trim()
+            }
             hasRootAccess -> ObfuscatedTextDecoder.decode(ROOT_TOKEN)
             else -> ""
         }
