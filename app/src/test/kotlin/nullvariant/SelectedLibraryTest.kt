@@ -23,6 +23,6 @@ class SelectedLibraryTest {
         assertEquals("64bit", selected.architecture)
         assertEquals("test-key", selected.jniKey)
         assertEquals("com.example.game", selected.gamePackage)
-        assertEquals("CODM", selected.type)
+        assertEquals("CODMGR", selected.type)
     }
 }

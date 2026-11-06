@@ -11,8 +11,8 @@ android {
         applicationId = "com.nullvariant.official"
         minSdk = 28
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.6.59"
+        versionCode = 4
+        versionName = "1.6.60"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -37,7 +37,6 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
-            versionNameSuffix = "-release"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

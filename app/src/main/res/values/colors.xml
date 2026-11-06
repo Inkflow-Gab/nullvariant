@@ -13,6 +13,9 @@
     <color name="loader_text_secondary">#AAB5C2</color>
     <color name="loader_text_muted">#718090</color>
     <color name="loader_accent">#AAB5C2</color>
+    <color name="loader_accent_cyan">#59D6FF</color>
+    <color name="loader_accent_violet">#9C7BFF</color>
+    <color name="loader_glow">#331FD1FF</color>
     <color name="loader_scrim">#B3080B10</color>
     <color name="loader_status_active">#31D17C</color>
     <color name="loader_status_maintenance">#FFD37A</color>

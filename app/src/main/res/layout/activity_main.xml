@@ -4,13 +4,13 @@
     android:id="@+id/root_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/loader_background">
+    android:background="@drawable/main_bg">
 
     <ScrollView
         android:id="@+id/main_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/loader_background"
+        android:background="@android:color/transparent"
         android:fillViewport="true"
         android:scrollbars="none">
 
@@ -65,12 +65,63 @@
                         android:textSize="8sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/engine_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/status_chip"
+                    android:paddingStart="9dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="9dp"
+                    android:paddingBottom="6dp"
+                    android:text="ENGINE ONLINE"
+                    android:textColor="@color/loader_status_active"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/bypass_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/status_chip"
+                    android:paddingStart="9dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="9dp"
+                    android:paddingBottom="5dp"
+                    android:text="BYPASS: STRONG"
+                    android:textColor="@color/loader_accent_cyan"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/root_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/status_chip"
+                    android:paddingStart="9dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="9dp"
+                    android:paddingBottom="5dp"
+                    android:text="ROOTLESS"
+                    android:textColor="@color/loader_text_muted"
+                    android:textSize="8sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
                 android:background="@drawable/loader_card"
                 android:orientation="vertical"
                 android:padding="16dp">
@@ -80,14 +131,25 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical">
 
-                    <ImageView
-                        android:id="@+id/app_banner"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:background="@drawable/circle"
-                        android:clipToOutline="true"
-                        android:contentDescription="Selected library logo"
-                        android:scaleType="centerCrop" />
+                    <FrameLayout
+                        android:layout_width="84dp"
+                        android:layout_height="84dp">
+
+                        <View
+                            android:layout_width="84dp"
+                            android:layout_height="84dp"
+                            android:background="@drawable/glow" />
+
+                        <ImageView
+                            android:id="@+id/app_banner"
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/circle"
+                            android:clipToOutline="true"
+                            android:contentDescription="Selected library logo"
+                            android:scaleType="centerCrop" />
+                    </FrameLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -168,6 +230,76 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.16"
+                    android:text="BYPASS STRENGTH"
+                    android:textColor="@color/loader_text_muted"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/bypass_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="8dp"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bypass_safe"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="SAFE"
+                        android:textColor="@color/loader_text_secondary"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/loader_border"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bypass_strong"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="STRONG"
+                        android:textColor="@color/loader_text_primary"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/loader_accent_cyan"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bypass_max"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="MAX"
+                        android:textColor="@color/loader_text_secondary"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/loader_border"
+                        app:strokeWidth="1dp" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <TextView
+                    android:id="@+id/bypass_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="7dp"
+                    android:text="Root mode with standard stealth flags."
+                    android:textColor="@color/loader_text_muted"
+                    android:textSize="8sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:gravity="center"
                     android:letterSpacing="0.18"
                     android:text="CODM GARENA  ·  1.6.59  ·  NO KEY"
@@ -178,7 +310,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
+                    android:layout_marginTop="8dp"
                     android:gravity="center"
                     android:letterSpacing="0.14"
                     android:text="NO LICENSE REQUIRED"
@@ -186,27 +318,46 @@
                     android:textSize="10sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.button.MaterialButton
+                <Button
                     android:id="@+id/login_button"
                     android:layout_width="match_parent"
                     android:layout_height="54dp"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/btn_gradient"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:stateListAnimator="@null"
                     android:text="PREPARE"
                     android:textColor="#10151D"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="@color/loader_text_primary"
-                    app:cornerRadius="27dp"
-                    app:icon="@drawable/ic_arrow_right"
-                    app:iconGravity="textStart"
-                    app:iconTint="#10151D"
-                    app:strokeWidth="0dp" />
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="3dp"
+                    android:layout_marginTop="10dp"
+                    android:indeterminate="true"
+                    android:indeterminateTint="@color/loader_status_active"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/action_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="9dp"
+                    android:gravity="center"
+                    android:letterSpacing="0.14"
+                    android:text="READY TO PREPARE"
+                    android:textColor="@color/loader_text_muted"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/telegram_button"
                     android:layout_width="match_parent"
                     android:layout_height="46dp"
-                    android:layout_marginTop="9dp"
+                    android:layout_marginTop="12dp"
                     android:text="TELEGRAM"
                     android:textColor="@color/loader_text_primary"
                     android:textSize="12sp"
@@ -292,13 +443,10 @@
 
             <Spinner android:id="@+id/my_spinner" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone" />
             <Spinner android:id="@+id/delay_spinner" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone" />
-            <Spinner android:id="@+id/method_spinner" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone" />
-            <ProgressBar android:id="@+id/progressBar" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone" />
             <RadioGroup android:id="@+id/radioGroup" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone">
                 <RadioButton android:id="@+id/radio_auto" android:layout_width="1dp" android:layout_height="1dp" />
                 <RadioButton android:id="@+id/radio_manual" android:layout_width="1dp" android:layout_height="1dp" />
             </RadioGroup>
-            <TextView android:id="@+id/root_status" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone" />
         </LinearLayout>
     </ScrollView>
 

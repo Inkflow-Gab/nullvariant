@@ -3,7 +3,6 @@ package com.nullvariant.official
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.net.Uri
@@ -28,18 +27,17 @@ import android.widget.RadioGroup
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
-import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
 
@@ -54,7 +52,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loginButton: Button
     private lateinit var librarySpinner: Spinner
     private lateinit var delaySpinner: Spinner
-    private lateinit var methodSpinner: Spinner
     private lateinit var loaderPreferences: LoaderPreferences
     private lateinit var progressBar: ProgressBar
     private lateinit var radioGroup: RadioGroup
@@ -68,9 +65,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var librarySearch: EditText
     private lateinit var libraryList: LinearLayout
     private lateinit var libraryCount: TextView
-    
+    private lateinit var bypassGroup: MaterialButtonToggleGroup
+    private lateinit var bypassStatus: TextView
+    private lateinit var bypassHint: TextView
+    private lateinit var actionStatus: TextView
+
     private val commandRunner = CommandRunner()
-    private val catalogClient = LibraryCatalogClient(assets)
+    private val catalogClient by lazy { LibraryCatalogClient(assets) }
     private val assetExtractor by lazy { AssetExtractor(assets, cacheDir) }
     private var isReadyToInject: Boolean = false
     private var selectedLibrary = SelectedLibrary()
@@ -80,7 +81,7 @@ class MainActivity : AppCompatActivity() {
     private val allLibraries = mutableListOf<JSONObject>()
     private val filteredLibraries = mutableListOf<JSONObject>()
     private var isDrawerOpen = false
-        
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(null)
         setContentView(R.layout.activity_main)
@@ -93,29 +94,29 @@ class MainActivity : AppCompatActivity() {
         libraryList = findViewById(R.id.library_list)
         libraryCount = findViewById(R.id.library_count)
         setupLibraryDrawer()
-        
+
         val appCacheDir = cacheDir.absolutePath
         val outputFile = File(appCacheDir, LIBRARY_FILE_NAME)
         if (outputFile.exists()) {
             outputFile.delete()
         }
-        
-        val versionCode = getAppVersionCode()
-        
+
         progressBar = findViewById(R.id.progressBar)
-        
         librarySpinner = findViewById(R.id.my_spinner)
         delaySpinner = findViewById(R.id.delay_spinner)
-        methodSpinner = findViewById(R.id.method_spinner)
         loginButton = findViewById(R.id.login_button)
         radioGroup = findViewById(R.id.radioGroup)
         radioAuto = findViewById(R.id.radio_auto)
         radioManual = findViewById(R.id.radio_manual)
         rootStatusView = findViewById(R.id.root_status)
         appBanner = findViewById(R.id.app_banner)
-        
+        bypassGroup = findViewById(R.id.bypass_group)
+        bypassStatus = findViewById(R.id.bypass_status)
+        bypassHint = findViewById(R.id.bypass_hint)
+        actionStatus = findViewById(R.id.action_status)
+
         appBanner.setImageResource(R.drawable.nullvariant_thumbnail)
-        
+
         loaderPreferences = LoaderPreferences(this)
 
         val savedMode = loaderPreferences.getMode()
@@ -126,36 +127,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupDelaySpinner()
-        setupMethodSpinner()
-        
+        setupBypassGroup()
+
         val savedDelay = loaderPreferences.getDelaySeconds()
-        val savedMethod = loaderPreferences.getInjectionMethod()
-        
         delaySpinner.setSelection(savedDelay)
-        methodSpinner.setSelection(when (savedMethod) {
-            "1" -> 0
-            "2" -> 1
-            "3" -> 2
-            else -> 0
-        })
-        
+
         delaySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 delaySeconds = position
                 loaderPreferences.saveDelaySeconds(position)
-            }
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
-        
-        methodSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                injectionMethod = when (position) {
-                    0 -> "1"
-                    1 -> "2"
-                    2 -> "3"
-                    else -> "1"
-                }
-                loaderPreferences.saveInjectionMethod(injectionMethod)
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -169,78 +149,118 @@ class MainActivity : AppCompatActivity() {
             if (!isReadyToInject) {
                 loginButton.isEnabled = false
                 loginButton.text = "PREPARING..."
+                progressBar.visibility = View.VISIBLE
+                actionStatus.text = "PREPARING ENGINE..."
                 librarySpinner.isEnabled = false
                 delaySpinner.isEnabled = false
-                methodSpinner.isEnabled = false
+                setBypassEnabled(false)
                 radioGroup.isEnabled = false
                 proceedWithDownload()
             } else {
                 injectLibrary(LIBRARY_FILE_NAME)
                 showToast("Injecting, please wait...")
                 loginButton.isEnabled = false
+                progressBar.visibility = View.VISIBLE
+                actionStatus.text = "INJECTING..."
                 radioGroup.isEnabled = false
                 delaySpinner.isEnabled = false
-                methodSpinner.isEnabled = false
+                setBypassEnabled(false)
             }
         }
-        
+
+        findViewById<View>(R.id.telegram_button).setOnClickListener {
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/toolsdropdaw")))
+            }.onFailure {
+                showToast("Unable to open Telegram")
+            }
+        }
+
         appBanner.setOnLongClickListener {
             appBanner.alpha = 0.7f
             Handler(Looper.getMainLooper()).postDelayed({
                 appBanner.alpha = 1.0f
             }, 500)
-            
+
             filterLibraries(!showTestLibraries)
-            
+
             val message = if (showTestLibraries) {
                 "Test libraries shown"
             } else {
                 "Test libraries hidden"
             }
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            
+
             true
         }
-        
+
         loadLibraryCatalog()
         updateRootStatus()
     }
-    
+
     private fun setupDelaySpinner() {
         val delayOptions = arrayOf("NO DELAY", "1S DELAY", "2S DELAY", "3S DELAY", "4S DELAY", "5S DELAY")
         delaySpinner.adapter = SimpleSpinnerAdapter(this, delayOptions)
     }
-    
-    private fun setupMethodSpinner() {
-        val methodOptions = arrayOf("METHOD 1", "METHOD 2", "METHOD 3")
-        methodSpinner.adapter = SimpleSpinnerAdapter(this, methodOptions)
+
+    private fun setupBypassGroup() {
+        injectionMethod = loaderPreferences.getInjectionMethod()
+        val checkedId = when (injectionMethod) {
+            "3" -> R.id.bypass_max
+            "2" -> R.id.bypass_safe
+            else -> R.id.bypass_strong
+        }
+        bypassGroup.check(checkedId)
+        updateBypassUi()
+
+        bypassGroup.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (isChecked) {
+                injectionMethod = when (buttonId) {
+                    R.id.bypass_safe -> "2"
+                    R.id.bypass_max -> "3"
+                    else -> "1"
+                }
+                loaderPreferences.saveInjectionMethod(injectionMethod)
+                updateBypassUi()
+            }
+        }
     }
-    
+
+    private fun updateBypassUi() {
+        if (!::bypassStatus.isInitialized) return
+        bypassStatus.text = when (injectionMethod) {
+            "2" -> "BYPASS: SAFE"
+            "3" -> "BYPASS: MAX"
+            else -> "BYPASS: STRONG"
+        }
+        if (::bypassHint.isInitialized) {
+            bypassHint.text = when (injectionMethod) {
+                "2" -> "Rootless mode. Stable injection, lower stealth."
+                "3" -> "Root + hidden maps and solist. Strongest stealth."
+                else -> "Root mode with standard stealth flags."
+            }
+        }
+    }
+
+    private fun setBypassEnabled(enabled: Boolean) {
+        bypassGroup.isEnabled = enabled
+        for (index in 0 until bypassGroup.childCount) {
+            bypassGroup.getChildAt(index).isEnabled = enabled
+        }
+    }
+
     private fun applyLibrarySelection(position: Int) {
         if (position !in filteredLibraries.indices) return
 
         val selectedLibraryJson = filteredLibraries[position]
         handleSelectedJsonData(selectedLibraryJson)
     }
-    
+
     private fun loadLibraryCatalog() {
         lifecycleScope.launch {
             val root = catalogClient.load().getOrElse { _ ->
                 Toast.makeText(this@MainActivity, "Failed to load servers data", Toast.LENGTH_SHORT).show()
                 return@launch
-            }
-
-            val meta = root.optJSONObject("META")
-            if (meta != null) {
-                val requiredCode = meta.optInt("APP_VERSION_CODE", -1)
-                val reason = meta.optString("VERSION_REASON", "Update required.")
-                val updateUrl = meta.optString("UPDATE_URL")
-
-                val currentCode = getAppVersionCode()
-                if (requiredCode != -1 && currentCode < requiredCode) {
-                    showVersionMismatchDialog(reason, updateUrl)
-                    return@launch
-                }
             }
 
             runCatching {
@@ -258,7 +278,7 @@ class MainActivity : AppCompatActivity() {
             filterLibraries(false)
         }
     }
-    
+
     private fun setupLibraryDrawer() {
         libraryDrawer.post {
             libraryDrawer.translationX = -libraryDrawer.width.toFloat()
@@ -376,13 +396,13 @@ class MainActivity : AppCompatActivity() {
             val status = LibraryMetadata.status(library)
             val available = status == "ACTIVE"
 
-            row.findViewById<TextView>(R.id.drawer_name).text = name
-            row.findViewById<TextView>(R.id.drawer_meta).text = meta
-            row.findViewById<TextView>(R.id.drawer_package).apply {
+            row.findViewById<TextView>(R.id.drawer_name)?.text = name
+            row.findViewById<TextView>(R.id.drawer_meta)?.text = meta
+            row.findViewById<TextView>(R.id.drawer_package)?.apply {
                 text = packageName
                 visibility = if (packageName.isBlank()) View.GONE else View.VISIBLE
             }
-            row.findViewById<TextView>(R.id.drawer_status).apply {
+            row.findViewById<TextView>(R.id.drawer_status)?.apply {
                 text = status
                 setTextColor(
                     ContextCompat.getColor(
@@ -407,7 +427,7 @@ class MainActivity : AppCompatActivity() {
             row.alpha = if (available) 1f else 0.58f
 
             row.findViewById<ImageView>(R.id.drawer_logo)
-                .setImageResource(R.drawable.nullvariant_bubble)
+                ?.setImageResource(R.drawable.nullvariant_bubble)
 
             row.setOnClickListener {
                 if (available) {
@@ -452,7 +472,7 @@ class MainActivity : AppCompatActivity() {
         }
         updateSpinnerWithFilteredData()
     }
-    
+
     private fun updateSpinnerWithFilteredData() {
         val nameList = mutableListOf<String>()
 
@@ -469,8 +489,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 val nameTextView = view!!.findViewById<TextView>(R.id.spinnerText)
                 val logoImageView = view.findViewById<ImageView>(R.id.logoImage)
-                nameTextView.text = " ${nameList[position]}"
-                logoImageView.setImageResource(R.drawable.nullvariant_bubble)
+                nameTextView?.text = " ${nameList[position]}"
+                logoImageView?.setImageResource(R.drawable.nullvariant_bubble)
 
                 return view
             }
@@ -479,7 +499,7 @@ class MainActivity : AppCompatActivity() {
                 return getView(position, convertView, parent)
             }
         }
-        
+
         librarySpinner.adapter = adapter
 
         librarySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -489,7 +509,7 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parentView: AdapterView<*>) {
             }
         }
-        
+
         val savedLibraryName = loaderPreferences.getSelectedLibrary()
         val savedPosition = filteredLibraries.indexOfFirst {
             it.optString("NAME") == savedLibraryName
@@ -500,25 +520,25 @@ class MainActivity : AppCompatActivity() {
             librarySpinner.setSelection(initialPosition, false)
             val initialName = filteredLibraries[initialPosition].optString("NAME")
             if (selectedLibrary.name != initialName || selectedLibrary.connectUrl.isBlank()) {
-            applyLibrarySelection(initialPosition)
+                applyLibrarySelection(initialPosition)
             }
         }
     }
-    
+
     fun handleSelectedJsonData(jsonObject: JSONObject) {
         selectedLibrary = SelectedLibrary.fromJson(jsonObject)
         val maintenance = !LibraryMetadata.isActive(jsonObject)
-        findViewById<TextView>(R.id.library_name).text = selectedLibrary.name
-        findViewById<TextView>(R.id.library_game).text = LibraryMetadata.gameLabel(jsonObject)
-        findViewById<TextView>(R.id.library_version).apply {
+        findViewById<TextView>(R.id.library_name)?.text = selectedLibrary.name
+        findViewById<TextView>(R.id.library_game)?.text = LibraryMetadata.gameLabel(jsonObject)
+        findViewById<TextView>(R.id.library_version)?.apply {
             text = LibraryMetadata.versionLabel(jsonObject)
             visibility = if (text.isNullOrBlank()) View.GONE else View.VISIBLE
         }
-        findViewById<TextView>(R.id.library_package).apply {
+        findViewById<TextView>(R.id.library_package)?.apply {
             text = selectedLibrary.gamePackage
             visibility = if (selectedLibrary.gamePackage.isBlank()) View.GONE else View.VISIBLE
         }
-        findViewById<TextView>(R.id.library_status).apply {
+        findViewById<TextView>(R.id.library_status)?.apply {
             text = if (maintenance) "● Maintenance" else "● Ready"
             setTextColor(
                 ContextCompat.getColor(
@@ -540,63 +560,31 @@ class MainActivity : AppCompatActivity() {
             if (!isReadyToInject) loginButton.text = "PREPARE"
         }
         appBanner.setImageResource(R.drawable.nullvariant_thumbnail)
+        appBanner.animate().cancel()
+        appBanner.animate().scaleX(1.06f).scaleY(1.06f).setDuration(180L).withEndAction {
+            appBanner.animate().scaleX(1f).scaleY(1f).setDuration(180L).start()
+        }.start()
 
         refreshLibraryDrawer()
-    }
-    
-    private fun showVersionMismatchDialog(message: String, updateUrl: String?) {
-        runOnUiThread {
-            val builder = AlertDialog.Builder(this)
-                .setTitle("Update Required")
-                .setMessage(message)
-                .setCancelable(false)
-                .setNegativeButton("Exit") { _, _ ->
-                    finishAffinity()
-                }
-
-            if (!updateUrl.isNullOrEmpty()) {
-                builder.setPositiveButton("Update") { _, _ ->
-                        try {
-                        startActivity(
-                            Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse(updateUrl)
-                            )
-                        )
-                        finishAffinity()
-                    } catch (e: Exception) {
-                        finishAffinity()
-                    }
-                }
-            }
-
-            builder.show()
-        }
-    }
- 
-    private fun getAppVersionCode(): Int {
-        return try {
-            packageManager.getPackageInfo(packageName, 0).longVersionCode.toInt()
-        } catch (e: Exception) {
-            0
-        }
     }
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
-    
+
     private fun saveSelectedLibrary(libraryName: String) {
         loaderPreferences.saveSelectedLibrary(libraryName)
     }
 
     private fun resetLoginState(message: String) {
         showToast(message)
+        progressBar.visibility = View.GONE
+        actionStatus.text = message
         loginButton.text = "PREPARE"
         loginButton.isEnabled = true
         librarySpinner.isEnabled = true
         delaySpinner.isEnabled = true
-        methodSpinner.isEnabled = true
+        setBypassEnabled(true)
         radioGroup.isEnabled = true
         isReadyToInject = false
     }
@@ -613,21 +601,31 @@ class MainActivity : AppCompatActivity() {
                 return@launch
             }
             delay(250)
+            progressBar.visibility = View.GONE
             loginButton.text = "INJECT"
+            actionStatus.text = "READY TO INJECT"
             showToast("Ready to inject")
             loginButton.isEnabled = true
+            setBypassEnabled(true)
             radioGroup.isEnabled = true
             delaySpinner.isEnabled = true
-            methodSpinner.isEnabled = true
             isReadyToInject = true
+            animateReadyButton()
         }
+    }
+
+    private fun animateReadyButton() {
+        loginButton.animate().cancel()
+        loginButton.animate().scaleX(1.04f).scaleY(1.04f).setDuration(160L).withEndAction {
+            loginButton.animate().scaleX(1f).scaleY(1f).setDuration(160L).start()
+        }.start()
     }
 
     private fun isLibraryReady(): Boolean {
         val libraryFile = File(cacheDir, LIBRARY_FILE_NAME)
         return libraryFile.isFile && libraryFile.length() > 0L
     }
-    
+
     private fun injectLibrary(libraryFileName: String) {
         val cacheDirectory = File(cacheDir.absolutePath)
         val outputFile = File(cacheDirectory, libraryFileName)
@@ -662,21 +660,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     private fun scheduleInjectionStatus() {
         lifecycleScope.launch(Dispatchers.Main) {
             delay(3000)
             showToast("Injection completed")
+            progressBar.visibility = View.GONE
+            actionStatus.text = "INJECTION COMPLETE"
             loginButton.text = "RE-INJECT"
             delay(5000)
             loginButton.text = "RE-INJECT"
             loginButton.isEnabled = true
+            setBypassEnabled(true)
             radioGroup.isEnabled = true
             delaySpinner.isEnabled = true
-            methodSpinner.isEnabled = true
         }
     }
-    
+
     private fun launchGame(packageName: String): Boolean {
         return try {
             val intent = packageManager.getLaunchIntentForPackage(packageName)
@@ -692,28 +692,30 @@ class MainActivity : AppCompatActivity() {
             false
         }
     }
-    
+
     private fun updateRootStatus() {
         lifecycleScope.launch(Dispatchers.IO) {
             val isRooted = commandRunner.hasRootAccess()
             withContext(Dispatchers.Main) {
-                if (isRooted) {
-                    rootStatusView.text = "ROOTED ENVIRONMENT"
-                    rootStatusView.setTextColor(Color.GREEN)
-                    rootStatusView.visibility = View.VISIBLE
-                } else {
-                    rootStatusView.visibility = View.GONE
-                }
+                rootStatusView.text = if (isRooted) "ROOTED" else "ROOTLESS"
+                rootStatusView.setTextColor(
+                    ContextCompat.getColor(
+                        this@MainActivity,
+                        if (isRooted) R.color.loader_status_active else R.color.loader_text_muted
+                    )
+                )
+                rootStatusView.visibility = View.VISIBLE
+                updateBypassUi()
             }
         }
     }
-    
+
     private fun cleanUp() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancelAll()
         LibraryDownloader.cancelNotification(this)
     }
-    
+
     override fun onStop() {
         super.onStop()
         if (isFinishing) {
