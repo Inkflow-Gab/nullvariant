@@ -34,7 +34,7 @@ class AssetExtractor(
 
     private fun copyAsset(assetPath: String) {
         val outputFile = File(cacheDirectory, assetPath)
-        if (outputFile.exists() && outputFile.length() > 0) return
+        if (!assetPath.startsWith("lib") && outputFile.exists() && outputFile.length() > 0) return
 
         try {
             outputFile.parentFile?.mkdirs()

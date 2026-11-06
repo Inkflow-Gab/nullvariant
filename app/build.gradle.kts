@@ -11,8 +11,8 @@ android {
         applicationId = "com.nullvariant.official"
         minSdk = 28
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.6.61"
+        versionCode = 6
+        versionName = "1.6.62"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
