@@ -48,7 +48,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:letterSpacing="0.18"
-            android:text="CODM  ·  1.6.63"
+            android:text="CODM  ·  1.6.64"
             android:textColor="@color/loader_text_muted"
             android:textSize="11sp"
             android:textStyle="bold" />
