@@ -8,7 +8,8 @@ object InjectionCommandBuilder {
         cacheDirectory: File,
         library: SelectedLibrary,
         libraryFileName: String,
-        hasRootAccess: Boolean
+        hasRootAccess: Boolean,
+        rootStagingDir: String? = null
     ): String {
         val forcedStealth = ObfuscatedTextDecoder.decode(FORCED_ROOT_TOKEN)
         val stealthArgument = if (hasRootAccess) {
@@ -17,14 +18,19 @@ object InjectionCommandBuilder {
             forcedStealth.replace("-root", "").trim()
         }
 
+        val baseDir = if (hasRootAccess && rootStagingDir != null) {
+            rootStagingDir
+        } else {
+            cacheDirectory.absolutePath
+        }
         val packageTarget = ObfuscatedTextDecoder.decode(PACKAGE_TARGET_TOKEN)
-        val libraryPath = "${ObfuscatedTextDecoder.decode(LIBRARY_PATH_PREFIX_TOKEN)}${cacheDirectory.absolutePath}/$libraryFileName"
+        val libraryPath = "${ObfuscatedTextDecoder.decode(LIBRARY_PATH_PREFIX_TOKEN)}$baseDir/$libraryFileName"
         val keyEntry = ObfuscatedTextDecoder.decode(KEY_ENTRY_TOKEN)
         val loaderName = when (library.architecture.lowercase()) {
             "32bit" -> ObfuscatedTextDecoder.decode(LOADER_32_TOKEN)
             else -> ObfuscatedTextDecoder.decode(LOADER_64_TOKEN)
         }
-        val loaderPath = "${cacheDirectory.absolutePath}/$loaderName"
+        val loaderPath = "$baseDir/$loaderName"
 
         return listOf(
             loaderPath,

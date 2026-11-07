@@ -5,22 +5,26 @@ import java.util.concurrent.TimeUnit
 class CommandRunner {
 
     fun hasRootAccess(): Boolean {
-        var process: Process? = null
-        return try {
-            val started = ProcessBuilder("su", "-c", "echo root")
-                .redirectErrorStream(true)
-                .start()
-            process = started
-            if (!started.waitFor(ROOT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                started.destroy()
-                return false
+        for (probe in ROOT_PROBES) {
+            var process: Process? = null
+            try {
+                val started = ProcessBuilder(*probe)
+                    .redirectErrorStream(true)
+                    .start()
+                process = started
+                if (!started.waitFor(ROOT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    started.destroy()
+                    continue
+                }
+                val output = started.inputStream.bufferedReader().use { it.readText() }
+                if (started.exitValue() == 0 && output.contains("uid=0")) return true
+            } catch (_: Exception) {
+                // try the next su variant
+            } finally {
+                runCatching { process?.destroy() }
             }
-            started.inputStream.bufferedReader().use { it.readLine() }?.contains("root") == true
-        } catch (_: Exception) {
-            false
-        } finally {
-            runCatching { process?.destroy() }
         }
+        return false
     }
 
     fun run(command: String, useRoot: Boolean): Boolean {
@@ -53,7 +57,15 @@ class CommandRunner {
     }
 
     private companion object {
-        const val ROOT_TIMEOUT_SECONDS = 2L
-        const val COMMAND_TIMEOUT_SECONDS = 30L
+        const val ROOT_TIMEOUT_SECONDS = 8L
+        const val COMMAND_TIMEOUT_SECONDS = 60L
+        val ROOT_PROBES = listOf(
+            arrayOf("su", "-c", "id"),
+            arrayOf("su", "0", "id"),
+            arrayOf("/system/bin/su", "-c", "id"),
+            arrayOf("/system/xbin/su", "-c", "id"),
+            arrayOf("/sbin/su", "-c", "id"),
+            arrayOf("/debug_ramdisk/su", "-c", "id")
+        )
     }
 }

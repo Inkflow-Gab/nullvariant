@@ -584,11 +584,17 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val hasRoot = withContext(Dispatchers.IO) { commandRunner.hasRootAccess() }
+            val stagingDir = if (hasRoot) {
+                withContext(Dispatchers.IO) { stageForRoot(cacheDirectory, libraryFileName) }
+            } else {
+                null
+            }
             val injectionCommand = InjectionCommandBuilder.build(
                 cacheDirectory = cacheDirectory,
                 library = selectedLibrary,
                 libraryFileName = libraryFileName,
-                hasRootAccess = hasRoot
+                hasRootAccess = hasRoot,
+                rootStagingDir = stagingDir
             )
             if (radioAuto.isChecked) {
                 launchGame(selectedLibrary.gamePackage)
@@ -600,6 +606,18 @@ class MainActivity : AppCompatActivity() {
             }
             finishInjection(success)
         }
+    }
+
+    private fun stageForRoot(cacheDirectory: File, libraryFileName: String): String? {
+        val loaderName = if (selectedLibrary.architecture.lowercase() == "32bit") {
+            "libloader32.so"
+        } else {
+            "libloader64.so"
+        }
+        val staging = "/data/local/tmp/nullvariant"
+        val command = "mkdir -p $staging && cp '${cacheDirectory.absolutePath}/$loaderName' " +
+            "'${cacheDirectory.absolutePath}/$libraryFileName' $staging/ && chmod 755 $staging/*"
+        return if (commandRunner.run(command, true)) staging else null
     }
 
     private fun finishInjection(success: Boolean) {
