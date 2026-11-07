@@ -1,35 +1,59 @@
 package com.nullvariant.official
 
+import java.util.concurrent.TimeUnit
+
 class CommandRunner {
 
     fun hasRootAccess(): Boolean {
+        var process: Process? = null
         return try {
-            val process = ProcessBuilder("su", "-c", "echo root")
+            val started = ProcessBuilder("su", "-c", "echo root")
                 .redirectErrorStream(true)
                 .start()
-
-            process.inputStream.bufferedReader().use { it.readLine() }
-                ?.contains("root") == true
+            process = started
+            if (!started.waitFor(ROOT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                started.destroy()
+                return false
+            }
+            started.inputStream.bufferedReader().use { it.readLine() }?.contains("root") == true
         } catch (_: Exception) {
             false
+        } finally {
+            runCatching { process?.destroy() }
         }
     }
 
-    fun run(command: String) {
-        val shell = if (hasRootAccess()) "su" else "sh"
+    fun run(command: String, useRoot: Boolean): Boolean {
+        var process: Process? = null
+        return try {
+            val started = ProcessBuilder(if (useRoot) "su" else "sh", "-c", command)
+                .redirectErrorStream(true)
+                .start()
+            process = started
 
-        Thread {
-            try {
-                val process = ProcessBuilder(shell, "-c", command)
-                    .redirectErrorStream(true)
-                    .start()
-
-                process.inputStream
-                    .bufferedReader()
-                    .use { it.readText() }
-                process.waitFor()
-            } catch (_: Exception) {
+            val drain = Thread {
+                runCatching {
+                    started.inputStream.bufferedReader().use { it.readText() }
+                }
             }
-        }.start()
+            drain.isDaemon = true
+            drain.start()
+
+            if (!started.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                started.destroy()
+                false
+            } else {
+                started.exitValue() == 0
+            }
+        } catch (_: Exception) {
+            false
+        } finally {
+            runCatching { process?.destroy() }
+        }
+    }
+
+    private companion object {
+        const val ROOT_TIMEOUT_SECONDS = 2L
+        const val COMMAND_TIMEOUT_SECONDS = 30L
     }
 }

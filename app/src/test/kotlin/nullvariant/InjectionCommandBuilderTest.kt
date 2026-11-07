@@ -1,6 +1,7 @@
 package com.nullvariant.official
 
 import java.io.File
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -19,12 +20,35 @@ class InjectionCommandBuilderTest {
             cacheDirectory = File("cache"),
             library = library,
             libraryFileName = "libexternal.so",
-            injectionMethod = "1",
             hasRootAccess = false
         )
 
         assertTrue(command.contains("com.example.game"))
         assertTrue(command.contains("libexternal.so"))
         assertTrue(command.contains("test-key"))
+        assertTrue(command.contains("-hide_solist"))
+        assertTrue(command.contains("-hide_maps"))
+        assertFalse(command.contains("-root"))
+    }
+
+    @Test
+    fun addsRootFlagWhenRootIsAvailable() {
+        val library = SelectedLibrary(
+            name = "nullvariant",
+            architecture = "64bit",
+            jniKey = "test-key",
+            gamePackage = "com.example.game"
+        )
+
+        val command = InjectionCommandBuilder.build(
+            cacheDirectory = File("cache"),
+            library = library,
+            libraryFileName = "libexternal.so",
+            hasRootAccess = true
+        )
+
+        assertTrue(command.contains("-root"))
+        assertTrue(command.contains("-hide_solist"))
+        assertTrue(command.contains("-hide_maps"))
     }
 }

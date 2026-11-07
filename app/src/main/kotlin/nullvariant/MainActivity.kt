@@ -31,7 +31,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,9 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var librarySearch: EditText
     private lateinit var libraryList: LinearLayout
     private lateinit var libraryCount: TextView
-    private lateinit var bypassGroup: MaterialButtonToggleGroup
-    private lateinit var bypassStatus: TextView
-    private lateinit var bypassHint: TextView
     private lateinit var actionStatus: TextView
 
     private val commandRunner = CommandRunner()
@@ -76,14 +72,15 @@ class MainActivity : AppCompatActivity() {
     private var isReadyToInject: Boolean = false
     private var selectedLibrary = SelectedLibrary()
     private var delaySeconds: Int = 0
-    private var injectionMethod: String = "1"
     private var showTestLibraries = false
     private val allLibraries = mutableListOf<JSONObject>()
     private val filteredLibraries = mutableListOf<JSONObject>()
     private var isDrawerOpen = false
 
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(null)
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Fonts.applyMedieval(this, findViewById(R.id.root_container))
 
@@ -110,12 +107,9 @@ class MainActivity : AppCompatActivity() {
         radioManual = findViewById(R.id.radio_manual)
         rootStatusView = findViewById(R.id.root_status)
         appBanner = findViewById(R.id.app_banner)
-        bypassGroup = findViewById(R.id.bypass_group)
-        bypassStatus = findViewById(R.id.bypass_status)
-        bypassHint = findViewById(R.id.bypass_hint)
         actionStatus = findViewById(R.id.action_status)
 
-        appBanner.setImageResource(R.drawable.nullvariant_thumbnail)
+        ImageLoader.load(appBanner, R.drawable.nullvariant_thumbnail, dp(96))
 
         loaderPreferences = LoaderPreferences(this)
 
@@ -127,7 +121,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupDelaySpinner()
-        setupBypassGroup()
 
         val savedDelay = loaderPreferences.getDelaySeconds()
         delaySpinner.setSelection(savedDelay)
@@ -153,7 +146,6 @@ class MainActivity : AppCompatActivity() {
                 actionStatus.text = "PREPARING ENGINE..."
                 librarySpinner.isEnabled = false
                 delaySpinner.isEnabled = false
-                setBypassEnabled(false)
                 radioGroup.isEnabled = false
                 proceedWithDownload()
             } else {
@@ -164,7 +156,6 @@ class MainActivity : AppCompatActivity() {
                 actionStatus.text = "INJECTING..."
                 radioGroup.isEnabled = false
                 delaySpinner.isEnabled = false
-                setBypassEnabled(false)
             }
         }
 
@@ -201,52 +192,6 @@ class MainActivity : AppCompatActivity() {
     private fun setupDelaySpinner() {
         val delayOptions = arrayOf("NO DELAY", "1S DELAY", "2S DELAY", "3S DELAY", "4S DELAY", "5S DELAY")
         delaySpinner.adapter = SimpleSpinnerAdapter(this, delayOptions)
-    }
-
-    private fun setupBypassGroup() {
-        injectionMethod = loaderPreferences.getInjectionMethod()
-        val checkedId = when (injectionMethod) {
-            "3" -> R.id.bypass_max
-            "2" -> R.id.bypass_safe
-            else -> R.id.bypass_strong
-        }
-        bypassGroup.check(checkedId)
-        updateBypassUi()
-
-        bypassGroup.addOnButtonCheckedListener { _, buttonId, isChecked ->
-            if (isChecked) {
-                injectionMethod = when (buttonId) {
-                    R.id.bypass_safe -> "2"
-                    R.id.bypass_max -> "3"
-                    else -> "1"
-                }
-                loaderPreferences.saveInjectionMethod(injectionMethod)
-                updateBypassUi()
-            }
-        }
-    }
-
-    private fun updateBypassUi() {
-        if (!::bypassStatus.isInitialized) return
-        bypassStatus.text = when (injectionMethod) {
-            "2" -> "BYPASS: SAFE"
-            "3" -> "BYPASS: MAX"
-            else -> "BYPASS: STRONG"
-        }
-        if (::bypassHint.isInitialized) {
-            bypassHint.text = when (injectionMethod) {
-                "2" -> "Rootless mode. Stable injection, lower stealth."
-                "3" -> "Hidden maps + solist. Root unlocks the full mask."
-                else -> "Root mode with standard stealth flags."
-            }
-        }
-    }
-
-    private fun setBypassEnabled(enabled: Boolean) {
-        bypassGroup.isEnabled = enabled
-        for (index in 0 until bypassGroup.childCount) {
-            bypassGroup.getChildAt(index).isEnabled = enabled
-        }
     }
 
     private fun applyLibrarySelection(position: Int) {
@@ -427,7 +372,7 @@ class MainActivity : AppCompatActivity() {
             row.alpha = if (available) 1f else 0.58f
 
             row.findViewById<ImageView>(R.id.drawer_logo)
-                ?.setImageResource(R.drawable.nullvariant_bubble)
+                ?.let { ImageLoader.load(it, R.drawable.nullvariant_bubble, dp(48)) }
 
             row.setOnClickListener {
                 if (available) {
@@ -559,7 +504,7 @@ class MainActivity : AppCompatActivity() {
             loginButton.isEnabled = true
             if (!isReadyToInject) loginButton.text = "PREPARE"
         }
-        appBanner.setImageResource(R.drawable.nullvariant_thumbnail)
+        ImageLoader.load(appBanner, R.drawable.nullvariant_thumbnail, dp(96))
         appBanner.animate().cancel()
         appBanner.animate().scaleX(1.06f).scaleY(1.06f).setDuration(180L).withEndAction {
             appBanner.animate().scaleX(1f).scaleY(1f).setDuration(180L).start()
@@ -584,7 +529,6 @@ class MainActivity : AppCompatActivity() {
         loginButton.isEnabled = true
         librarySpinner.isEnabled = true
         delaySpinner.isEnabled = true
-        setBypassEnabled(true)
         radioGroup.isEnabled = true
         isReadyToInject = false
     }
@@ -606,7 +550,6 @@ class MainActivity : AppCompatActivity() {
             actionStatus.text = "READY TO INJECT"
             showToast("Ready to inject")
             loginButton.isEnabled = true
-            setBypassEnabled(true)
             radioGroup.isEnabled = true
             delaySpinner.isEnabled = true
             isReadyToInject = true
@@ -645,36 +588,29 @@ class MainActivity : AppCompatActivity() {
                 cacheDirectory = cacheDirectory,
                 library = selectedLibrary,
                 libraryFileName = libraryFileName,
-                injectionMethod = injectionMethod,
                 hasRootAccess = hasRoot
             )
             if (radioAuto.isChecked) {
                 launchGame(selectedLibrary.gamePackage)
                 delay(1000)
                 delay(delaySeconds * 1000L)
-                commandRunner.run(injectionCommand)
-                scheduleInjectionStatus()
-            } else {
-                commandRunner.run(injectionCommand)
-                scheduleInjectionStatus()
             }
+            val success = withContext(Dispatchers.IO) {
+                commandRunner.run(injectionCommand, hasRoot)
+            }
+            finishInjection(success)
         }
     }
 
-    private fun scheduleInjectionStatus() {
-        lifecycleScope.launch(Dispatchers.Main) {
-            delay(3000)
-            showToast("Injection completed")
-            progressBar.visibility = View.GONE
-            actionStatus.text = "INJECTION COMPLETE"
-            loginButton.text = "RE-INJECT"
-            delay(5000)
-            loginButton.text = "RE-INJECT"
-            loginButton.isEnabled = true
-            setBypassEnabled(true)
-            radioGroup.isEnabled = true
-            delaySpinner.isEnabled = true
-        }
+    private fun finishInjection(success: Boolean) {
+        progressBar.visibility = View.GONE
+        actionStatus.text = if (success) "INJECTION COMPLETE" else "INJECTION FAILED"
+        showToast(if (success) "Injection completed" else "Injection failed")
+        loginButton.text = "RE-INJECT"
+        loginButton.isEnabled = true
+        librarySpinner.isEnabled = true
+        delaySpinner.isEnabled = true
+        radioGroup.isEnabled = true
     }
 
     private fun launchGame(packageName: String): Boolean {
@@ -705,7 +641,6 @@ class MainActivity : AppCompatActivity() {
                     )
                 )
                 rootStatusView.visibility = View.VISIBLE
-                updateBypassUi()
             }
         }
     }

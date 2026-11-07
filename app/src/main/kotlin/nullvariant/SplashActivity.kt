@@ -39,8 +39,10 @@ class SplashActivity : AppCompatActivity() {
 
     private val totalDuration = 5600L
 
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(null)
+        super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, R.anim.fade_in, R.anim.fade_out)
@@ -56,6 +58,7 @@ class SplashActivity : AppCompatActivity() {
         statusText = findViewById(R.id.splash_status)
         percentText = findViewById(R.id.splash_percent)
         splashLogo = findViewById(R.id.splash_logo)
+        ImageLoader.load(splashLogo, R.drawable.nullvariant_logo, dp(128))
         progressBar.progress = 0
 
         permissionLauncher = registerForActivityResult(
@@ -90,9 +93,9 @@ class SplashActivity : AppCompatActivity() {
     private fun startLogoPulse() {
         logoPulse = ObjectAnimator.ofPropertyValuesHolder(
             splashLogo,
-            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.08f, 1f),
-            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.08f, 1f),
-            PropertyValuesHolder.ofFloat(View.ALPHA, 0.82f, 1f, 0.82f)
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.05f, 1f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.05f, 1f),
+            PropertyValuesHolder.ofFloat(View.ALPHA, 0.88f, 1f, 0.88f)
         ).apply {
             duration = 1600L
             repeatCount = ValueAnimator.INFINITE

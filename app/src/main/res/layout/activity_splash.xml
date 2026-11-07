@@ -28,9 +28,9 @@
                 android:layout_height="96dp"
                 android:layout_gravity="center"
                 android:background="@drawable/circle"
+                android:clipToOutline="true"
                 android:contentDescription="//nullvariant logo"
-                android:scaleType="centerCrop"
-                android:src="@drawable/nullvariant_logo" />
+                android:scaleType="centerCrop" />
         </FrameLayout>
 
         <TextView
@@ -48,7 +48,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:letterSpacing="0.18"
-            android:text="CODM  ·  1.6.59"
+            android:text="CODM  ·  1.6.63"
             android:textColor="@color/loader_text_muted"
             android:textSize="11sp"
             android:textStyle="bold" />

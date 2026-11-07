@@ -8,17 +8,13 @@ object InjectionCommandBuilder {
         cacheDirectory: File,
         library: SelectedLibrary,
         libraryFileName: String,
-        injectionMethod: String,
         hasRootAccess: Boolean
     ): String {
-        val rootArgument = when {
-            injectionMethod == "2" -> ""
-            injectionMethod == "3" -> {
-                val forced = ObfuscatedTextDecoder.decode(FORCED_ROOT_TOKEN)
-                if (hasRootAccess) forced else forced.replace("-root", "").trim()
-            }
-            hasRootAccess -> ObfuscatedTextDecoder.decode(ROOT_TOKEN)
-            else -> ""
+        val forcedStealth = ObfuscatedTextDecoder.decode(FORCED_ROOT_TOKEN)
+        val stealthArgument = if (hasRootAccess) {
+            forcedStealth
+        } else {
+            forcedStealth.replace("-root", "").trim()
         }
 
         val packageTarget = ObfuscatedTextDecoder.decode(PACKAGE_TARGET_TOKEN)
@@ -30,10 +26,17 @@ object InjectionCommandBuilder {
         }
         val loaderPath = "${cacheDirectory.absolutePath}/$loaderName"
 
-        return "$loaderPath $packageTarget ${library.gamePackage} $libraryPath $keyEntry ${library.jniKey} $rootArgument"
+        return listOf(
+            loaderPath,
+            packageTarget,
+            library.gamePackage,
+            libraryPath,
+            keyEntry,
+            library.jniKey,
+            stealthArgument
+        ).filter { it.isNotBlank() }.joinToString(" ")
     }
 
-    private const val ROOT_TOKEN = "995458a788"
     private const val FORCED_ROOT_TOKEN = "995458a788274bc8175051c9917764dc9aca3eccef6f4f36be47ae4e44"
     private const val PACKAGE_TARGET_TOKEN = "99c25a54c9b18c"
     private const val LIBRARY_PATH_PREFIX_TOKEN = "990aa2649286417c15"

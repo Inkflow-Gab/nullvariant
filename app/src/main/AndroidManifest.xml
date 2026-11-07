@@ -15,6 +15,7 @@
 
     <application
         android:allowBackup="false"
+        android:largeHeap="true"
         android:icon="@drawable/nullvariant_logo"
         android:roundIcon="@drawable/nullvariant_logo"
         android:label="@string/app_name"

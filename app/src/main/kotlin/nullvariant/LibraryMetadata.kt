@@ -22,7 +22,7 @@ object LibraryMetadata {
             .firstOrNull { it.isNotBlank() }
         if (rawVersion.isNullOrBlank()) {
             val game = library.optString("GAME")
-            return if (game.contains("codm", ignoreCase = true)) "v1.6.59" else ""
+            return if (game.contains("codm", ignoreCase = true)) "v${BuildConfig.VERSION_NAME}" else ""
         }
         return if (rawVersion.startsWith("v", ignoreCase = true)) rawVersion else "v$rawVersion"
     }

@@ -96,7 +96,7 @@
                     android:paddingTop="5dp"
                     android:paddingEnd="9dp"
                     android:paddingBottom="5dp"
-                    android:text="BYPASS: STRONG"
+                    android:text="BYPASS: AUTO"
                     android:textColor="@color/loader_accent_cyan"
                     android:textSize="8sp"
                     android:textStyle="bold" />
@@ -186,7 +186,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
-                            android:text="v1.6.59"
+                            android:text="v1.6.63"
                             android:textColor="@color/loader_text_muted"
                             android:textSize="11sp"
                             android:textStyle="bold" />
@@ -231,70 +231,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:letterSpacing="0.16"
-                    android:text="BYPASS STRENGTH"
+                    android:text="AUTOMATIC BYPASS"
                     android:textColor="@color/loader_text_muted"
                     android:textSize="8sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/bypass_group"
-                    android:layout_width="match_parent"
-                    android:layout_height="42dp"
-                    android:layout_marginTop="8dp"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/bypass_safe"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="SAFE"
-                        android:textColor="@color/loader_text_secondary"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="@color/loader_border"
-                        app:strokeWidth="1dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/bypass_strong"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="STRONG"
-                        android:textColor="@color/loader_text_primary"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="@color/loader_accent_cyan"
-                        app:strokeWidth="1dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/bypass_max"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="MAX"
-                        android:textColor="@color/loader_text_secondary"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="@color/loader_border"
-                        app:strokeWidth="1dp" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
                 <TextView
-                    android:id="@+id/bypass_hint"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="7dp"
-                    android:text="Root mode with standard stealth flags."
-                    android:textColor="@color/loader_text_muted"
-                    android:textSize="8sp" />
+                    android:text="Stealth is configured automatically for your device. No setup needed."
+                    android:textColor="@color/loader_text_secondary"
+                    android:textSize="10sp" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -302,7 +250,7 @@
                     android:layout_marginTop="14dp"
                     android:gravity="center"
                     android:letterSpacing="0.18"
-                    android:text="CODM GARENA  ·  1.6.59  ·  NO KEY"
+                    android:text="CODM GARENA  ·  1.6.63  ·  NO KEY"
                     android:textColor="@color/loader_text_muted"
                     android:textSize="8sp"
                     android:textStyle="bold" />

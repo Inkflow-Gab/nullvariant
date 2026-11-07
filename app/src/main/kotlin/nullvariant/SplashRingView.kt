@@ -8,7 +8,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
-import android.view.animation.LinearInterpolator
+import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.core.content.ContextCompat
 
 class SplashRingView @JvmOverloads constructor(
@@ -24,15 +24,13 @@ class SplashRingView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = dp(1.5f)
         color = ContextCompat.getColor(context, R.color.loader_text_primary)
-        alpha = 34
     }
 
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = dp(12f)
+        strokeWidth = dp(10f)
         strokeCap = Paint.Cap.ROUND
         color = ContextCompat.getColor(context, R.color.loader_status_active)
-        alpha = 64
         maskFilter = BlurMaskFilter(dp(10f), BlurMaskFilter.Blur.NORMAL)
     }
 
@@ -48,18 +46,19 @@ class SplashRingView @JvmOverloads constructor(
         strokeWidth = dp(2f)
         strokeCap = Paint.Cap.ROUND
         color = ContextCompat.getColor(context, R.color.loader_accent_cyan)
-        alpha = 150
     }
 
     private val ringRect = RectF()
-    private var angle = 0f
+    private val pulseRect = RectF()
+    private var pulse = 0f
 
-    private val animator = ValueAnimator.ofFloat(0f, 360f).apply {
-        duration = 2600L
+    private val animator = ValueAnimator.ofFloat(0f, 1f).apply {
+        duration = 1900L
         repeatCount = ValueAnimator.INFINITE
-        interpolator = LinearInterpolator()
+        repeatMode = ValueAnimator.REVERSE
+        interpolator = AccelerateDecelerateInterpolator()
         addUpdateListener {
-            angle = it.animatedValue as Float
+            pulse = it.animatedValue as Float
             invalidate()
         }
     }
@@ -74,10 +73,30 @@ class SplashRingView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (ringRect.isEmpty) return
 
-        canvas.drawArc(ringRect, 0f, 360f, false, basePaint)
-        canvas.drawArc(ringRect, angle, 108f, false, glowPaint)
-        canvas.drawArc(ringRect, angle, 108f, false, arcPaint)
-        canvas.drawArc(ringRect, angle + 190f, 34f, false, accentPaint)
+        val scale = 1f + 0.06f * pulse
+        val halfWidth = ringRect.width() * 0.5f * scale
+        val halfHeight = ringRect.height() * 0.5f * scale
+        val centerX = ringRect.centerX()
+        val centerY = ringRect.centerY()
+        pulseRect.set(
+            centerX - halfWidth,
+            centerY - halfHeight,
+            centerX + halfWidth,
+            centerY + halfHeight
+        )
+
+        glowPaint.alpha = (40 + 55 * pulse).toInt()
+        glowPaint.strokeWidth = dp(9f + 4f * pulse)
+        canvas.drawArc(pulseRect, 0f, 360f, false, glowPaint)
+
+        basePaint.alpha = (26 + 24 * pulse).toInt()
+        canvas.drawArc(pulseRect, 0f, 360f, false, basePaint)
+
+        arcPaint.alpha = (185 + 55 * pulse).toInt()
+        canvas.drawArc(pulseRect, -90f, 92f, false, arcPaint)
+
+        accentPaint.alpha = (95 + 85 * pulse).toInt()
+        canvas.drawArc(pulseRect, 34f, 42f, false, accentPaint)
     }
 
     override fun onAttachedToWindow() {
